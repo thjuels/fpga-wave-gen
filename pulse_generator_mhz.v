@@ -5,7 +5,7 @@
 // =============================================================================
 
 module pulse_generator_mhz #(
-    parameter N_MHZ = 5  // Default 5 MHz, adjust based on student IDs
+    parameter N_MHZ = 3
 )(
     input  wire        clk,           // 100 MHz system clock
     input  wire        rst_n,
