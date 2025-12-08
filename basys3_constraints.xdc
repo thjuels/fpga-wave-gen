@@ -29,6 +29,7 @@ set_property -dict { PACKAGE_PIN V15  IOSTANDARD LVCMOS33 } [get_ports {sw_duty_
 set_property -dict { PACKAGE_PIN W14  IOSTANDARD LVCMOS33 } [get_ports sw_phase_mode]
 set_property -dict { PACKAGE_PIN W13  IOSTANDARD LVCMOS33 } [get_ports sw_cont_duty]
 set_property -dict { PACKAGE_PIN V2   IOSTANDARD LVCMOS33 } [get_ports sw_cont_freq]
+set_property -dict { PACKAGE_PIN R2   IOSTANDARD LVCMOS33 } [get_ports sw_pulse_mode]
 
 ## =============================================================================
 ## Push Buttons (directly active high, directly usable)

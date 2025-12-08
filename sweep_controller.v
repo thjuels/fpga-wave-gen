@@ -11,7 +11,7 @@ module sweep_controller (
     input  wire [19:0] base_freq,        // Base frequency in Hz
     input  wire [1:0]  sweep_mode,       // 00: No sweep, 01: Linear, 10: Sinusoidal
     input  wire [16:0] sweep_range,      // Sweep range in Hz (max deviation)
-    input  wire [12:0] sweep_speed,      // Sweep speed in Hz/ms
+    input  wire [12:0] sweep_speed,      // Sweep speed in Hz/us (previously Hz/ms)
     
     // Output
     output reg  [19:0] current_freq      // Current instantaneous frequency
@@ -65,8 +65,8 @@ module sweep_controller (
     
     assign sweep_range_signed = {1'b0, sweep_range};
     
-    // Calculate sweep increment per ms
-    // sweep_speed is in Hz/ms
+    // Calculate sweep increment per step
+    // sweep_speed is in Hz/us
     wire [12:0] linear_increment;
     assign linear_increment = sweep_speed;
     
@@ -75,7 +75,7 @@ module sweep_controller (
             linear_offset <= 18'sd0;
             linear_direction <= 1'b0;
         end else if (sweep_mode == 2'b01) begin  // Linear sweep mode
-            if (ms_tick) begin
+            if (us_tick) begin // Update every microsecond for high speed sweep
                 if (!linear_direction) begin
                     // Increasing frequency
                     if (linear_offset + $signed({5'b0, linear_increment}) >= sweep_range_signed) begin
@@ -124,7 +124,7 @@ module sweep_controller (
             sine_phase <= 12'd0;
             sine_phase_inc <= 16'd10;  // Default slow sweep
         end else if (sweep_mode == 2'b10) begin  // Sinusoidal sweep mode
-            if (ms_tick) begin
+            if (us_tick) begin // Update every microsecond
                 sine_phase <= sine_phase + sine_phase_inc[11:0];
             end
             // Adjust phase increment based on sweep_speed

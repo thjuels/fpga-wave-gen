@@ -28,9 +28,12 @@ module input_processor (
     output reg  [12:0] sweep_speed_out,  // Sweep speed in Hz/ms (0-4000)
     
     // Display outputs
-    output reg  [15:0] display_value,
-    output reg  [3:0]  display_mode
+    output reg  [19:0] display_value,
+    output reg  [3:0]  display_mode,
+    output wire [2:0]  cursor_out
 );
+
+    assign cursor_out = digit_select;
 
     // =========================================================================
     // Configuration State Machine
@@ -188,12 +191,12 @@ module input_processor (
     always @(*) begin
         display_mode = config_mode;
         case (config_mode)
-            MODE_FREQ:        display_value = freq_out[15:0];        // Show lower 16 bits
-            MODE_PHASE:       display_value = {6'b0, phase_out};
-            MODE_DUTY:        display_value = {9'b0, duty_out};
-            MODE_SWEEP_RANGE: display_value = sweep_range_out[15:0];
-            MODE_SWEEP_SPEED: display_value = {3'b0, sweep_speed_out};
-            default:          display_value = freq_out[15:0];
+            MODE_FREQ:        display_value = freq_out;              // Show full 20 bits
+            MODE_PHASE:       display_value = {10'b0, phase_out};
+            MODE_DUTY:        display_value = {13'b0, duty_out};
+            MODE_SWEEP_RANGE: display_value = {3'b0, sweep_range_out};
+            MODE_SWEEP_SPEED: display_value = {7'b0, sweep_speed_out};
+            default:          display_value = freq_out;
         endcase
     end
 

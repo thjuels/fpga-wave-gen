@@ -6,8 +6,9 @@
 module seven_seg_controller (
     input  wire        clk,
     input  wire        rst_n,
-    input  wire [15:0] value,      // 16-bit value to display
+    input  wire [19:0] value,      // 20-bit value to display (up to 999,999)
     input  wire [3:0]  mode,       // Display mode for formatting
+    input  wire [2:0]  cursor,     // Cursor position for scrolling (0-5)
     output reg  [6:0]  seg,        // Segment outputs (active low)
     output reg  [3:0]  an,         // Digit anodes (active low)
     output reg         dp          // Decimal point
@@ -41,30 +42,31 @@ module seven_seg_controller (
     // =========================================================================
     // BCD Conversion (Binary to BCD)
     // =========================================================================
-    reg [3:0] digit0, digit1, digit2, digit3;
-    reg [15:0] bcd_temp;
+    reg [3:0] digit0, digit1, digit2, digit3, digit4, digit5;
+    reg [23:0] bcd_temp; // Need 4*6 = 24 bits for 6 digits
     integer j;
     
     // Double-dabble algorithm for binary to BCD
     always @(*) begin
-        bcd_temp = 16'd0;
-        for (j = 15; j >= 0; j = j - 1) begin
+        bcd_temp = 24'd0;
+        for (j = 19; j >= 0; j = j - 1) begin
             // Check if any BCD digit is >= 5, if so add 3
-            if (bcd_temp[3:0] >= 5)
-                bcd_temp[3:0] = bcd_temp[3:0] + 4'd3;
-            if (bcd_temp[7:4] >= 5)
-                bcd_temp[7:4] = bcd_temp[7:4] + 4'd3;
-            if (bcd_temp[11:8] >= 5)
-                bcd_temp[11:8] = bcd_temp[11:8] + 4'd3;
-            if (bcd_temp[15:12] >= 5)
-                bcd_temp[15:12] = bcd_temp[15:12] + 4'd3;
+            if (bcd_temp[3:0] >= 5)   bcd_temp[3:0]   = bcd_temp[3:0] + 4'd3;
+            if (bcd_temp[7:4] >= 5)   bcd_temp[7:4]   = bcd_temp[7:4] + 4'd3;
+            if (bcd_temp[11:8] >= 5)  bcd_temp[11:8]  = bcd_temp[11:8] + 4'd3;
+            if (bcd_temp[15:12] >= 5) bcd_temp[15:12] = bcd_temp[15:12] + 4'd3;
+            if (bcd_temp[19:16] >= 5) bcd_temp[19:16] = bcd_temp[19:16] + 4'd3;
+            if (bcd_temp[23:20] >= 5) bcd_temp[23:20] = bcd_temp[23:20] + 4'd3;
+            
             // Shift left and bring in next bit
-            bcd_temp = {bcd_temp[14:0], value[j]};
+            bcd_temp = {bcd_temp[22:0], value[j]};
         end
         digit0 = bcd_temp[3:0];
         digit1 = bcd_temp[7:4];
         digit2 = bcd_temp[11:8];
         digit3 = bcd_temp[15:12];
+        digit4 = bcd_temp[19:16];
+        digit5 = bcd_temp[23:20];
     end
     
     // =========================================================================
@@ -72,14 +74,25 @@ module seven_seg_controller (
     // =========================================================================
     reg [3:0] current_digit;
     
-    // Select current digit value
+    // Select current digit value based on refresh counter and cursor position
     always @(*) begin
-        case (digit_select)
-            2'd0: current_digit = digit0;
-            2'd1: current_digit = digit1;
-            2'd2: current_digit = digit2;
-            2'd3: current_digit = digit3;
-        endcase
+        // If cursor is in upper digits (4 or 5), show upper window (digits 5,4,3,2)
+        // Otherwise show lower window (digits 3,2,1,0)
+        if (cursor >= 3'd4) begin
+            case (digit_select)
+                2'd0: current_digit = digit2;
+                2'd1: current_digit = digit3;
+                2'd2: current_digit = digit4;
+                2'd3: current_digit = digit5;
+            endcase
+        end else begin
+            case (digit_select)
+                2'd0: current_digit = digit0;
+                2'd1: current_digit = digit1;
+                2'd2: current_digit = digit2;
+                2'd3: current_digit = digit3;
+            endcase
+        end
     end
     
     // Anode control (active low)
@@ -125,7 +138,23 @@ module seven_seg_controller (
     // Decimal point control based on mode
     always @(*) begin
         case (mode)
-            4'd0: dp = (digit_select == 2'd2) ? 1'b0 : 1'b1;  // Freq mode: XX.XX kHz
+            4'd0: begin // Freq mode
+                if (cursor >= 3'd4) begin
+                    // Upper window: showing digits 5,4,3,2 (e.g. 123.4 kHz)
+                    // DP should be after digit 2 (which is at pos 0)
+                    dp = (digit_select == 2'd0) ? 1'b0 : 1'b1;
+                end else begin
+                    // Lower window: showing digits 3,2,1,0 (e.g. .456 Hz part)
+                    // DP should be before digit 3 (at pos 3) to indicate continuation?
+                    // Or maybe just no DP for lower part if we assume Hz?
+                    // Let's stick to the previous logic style: 
+                    // If we want 123.456 kHz.
+                    // Upper: 123.4
+                    // Lower: 3456 (no DP? or maybe at pos 3 to match?)
+                    // Let's put DP at pos 3 for lower window to indicate it's fractional part
+                    dp = (digit_select == 2'd3) ? 1'b0 : 1'b1;
+                end
+            end
             4'd1: dp = 1'b1;  // Phase mode: no DP
             4'd2: dp = 1'b1;  // Duty mode: no DP
             4'd3: dp = (digit_select == 2'd1) ? 1'b0 : 1'b1;  // Sweep range
