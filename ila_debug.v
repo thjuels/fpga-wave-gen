@@ -33,7 +33,7 @@ module ila_waveform_debug (
     // Note: This is a template. You need to generate the actual ILA IP core
     // in Vivado and instantiate it here.
     
-    /*
+    
     ila_0 u_ila (
         .clk(clk),
         .probe0(dac_out),           // [11:0] DAC output value
@@ -46,7 +46,7 @@ module ila_waveform_debug (
         .probe7(duty_config),       // [6:0]  Duty cycle
         .probe8(rst_n)              // [0:0]  Reset status
     );
-    */
+   
 
 endmodule
 
