@@ -263,9 +263,9 @@ module awg_top (
         .current_freq(current_freq),      // [19:0] Current frequency
         .waveform_sel(sw_waveform),      // [1:0]  Waveform type
         .sweep_mode(sw_sweep_mode),        // [1:0]  Sweep mode
-        .freq_config(freq_val),       // [19:0] Configured frequency
-        .phase_config(phase_val),      // [9:0]  Configured phase
-        .duty_config(duty_cycle)       // [6:0]  Duty cycle
+        .freq_config(freq_config),       // [19:0] Configured frequency
+        .phase_config(phase_config),      // [9:0]  Configured phase
+        .duty_config(duty_config)       // [6:0]  Duty cycle
     );
     
     

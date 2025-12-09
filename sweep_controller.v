@@ -102,14 +102,14 @@ module sweep_controller (
     
     // =========================================================================
     // Sinusoidal Sweep Implementation
-    // Uses a sine LUT for smooth sweeping
+    // Uses the shared sine_generator for smooth sweeping
     // =========================================================================
     reg [11:0] sine_phase;           // Phase for sweep sine wave
     wire [11:0] sine_value;          // Sine LUT output
     reg signed [17:0] sine_offset;
     
-    // Sine LUT for sweep modulation
-    sine_lut_sweep u_sine_sweep (
+    // Use the robust sine_generator instead of a local simplified LUT
+    sine_generator u_sine_sweep (
         .clk(clk),
         .phase(sine_phase),
         .sine_out(sine_value)
@@ -183,56 +183,6 @@ module sweep_controller (
                 current_freq <= freq_with_offset[19:0];
             end
         end
-    end
-
-endmodule
-
-// =============================================================================
-// Sine LUT for Sweep Modulation
-// Smaller LUT for sweep trajectory
-// =============================================================================
-module sine_lut_sweep (
-    input  wire        clk,
-    input  wire [11:0] phase,
-    output reg  [11:0] sine_out
-);
-
-    // 256-entry quarter sine table (stores 0 to pi/2)
-    reg [11:0] quarter_sine [0:255];
-    
-    // Initialize quarter sine table
-    integer i;
-    initial begin
-        for (i = 0; i < 256; i = i + 1) begin
-            // sin(i * pi / 512) scaled to 0-2047
-            quarter_sine[i] = 2048 + $rtoi(2047.0 * $sin(3.14159265359 * i / 512.0));
-        end
-    end
-    
-    // Full sine wave reconstruction from quarter table
-    wire [1:0]  quadrant;
-    wire [7:0]  index;
-    wire [7:0]  table_addr;
-    reg  [11:0] table_value;
-    
-    assign quadrant = phase[11:10];
-    assign index = phase[9:2];
-    
-    // Address manipulation for different quadrants
-    assign table_addr = (quadrant[0]) ? (8'd255 - index) : index;
-    
-    always @(posedge clk) begin
-        table_value <= quarter_sine[table_addr];
-    end
-    
-    // Quadrant adjustment
-    always @(posedge clk) begin
-        case (quadrant)
-            2'b00: sine_out <= table_value;                      // 0 to pi/2
-            2'b01: sine_out <= table_value;                      // pi/2 to pi
-            2'b10: sine_out <= 12'd4095 - table_value;           // pi to 3pi/2
-            2'b11: sine_out <= 12'd4095 - table_value;           // 3pi/2 to 2pi
-        endcase
     end
 
 endmodule
