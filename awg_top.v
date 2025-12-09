@@ -218,7 +218,6 @@ module awg_top (
                 2'b01: wave_mux = wave_saw;
                 2'b10: wave_mux = wave_tri;
                 2'b11: wave_mux = wave_square;
-                default: wave_mux = wave_sine; // Default to sine
             endcase
         end
     end
@@ -251,22 +250,4 @@ module awg_top (
     assign led[7]     = locked;           // Clock locked
     assign led[15:8]  = wave_selected[11:4]; // Waveform amplitude indicator
 
-
-
-    
-    ila_waveform_debug ila_inst (
-        .clk(clk),
-        .rst_n(rst_n),              // [0:0]  Reset status
-
-        .dac_out(dac_out),           // [11:0] DAC output value
-        .phase_acc(phase_acc),  // [11:0] Phase (upper 12 bits)
-        .current_freq(current_freq),      // [19:0] Current frequency
-        .waveform_sel(sw_waveform),      // [1:0]  Waveform type
-        .sweep_mode(sw_sweep_mode),        // [1:0]  Sweep mode
-        .freq_config(freq_config),       // [19:0] Configured frequency
-        .phase_config(phase_config),      // [9:0]  Configured phase
-        .duty_config(duty_config)       // [6:0]  Duty cycle
-    );
-    
-    
 endmodule
