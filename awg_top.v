@@ -218,6 +218,7 @@ module awg_top (
                 2'b01: wave_mux = wave_saw;
                 2'b10: wave_mux = wave_tri;
                 2'b11: wave_mux = wave_square;
+                default: wave_mux = wave_sine; // Default to sine
             endcase
         end
     end
