@@ -8,7 +8,11 @@ set_property -dict { PACKAGE_PIN W5   IOSTANDARD LVCMOS33 } [get_ports clk]
 create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk]
 
 ## Reset (directly active low, directly usable)
-set_property -dict { PACKAGE_PIN U18  IOSTANDARD LVCMOS33 } [get_ports rst_n]
+# set_property -dict { PACKAGE_PIN U18  IOSTANDARD LVCMOS33 } [get_ports rst_n]
+# U18 is btn_center, which is already used. Let's use SW15 (R2) for reset if needed, or just rely on power-on reset.
+# However, the design uses rst_n. Let's map it to a different button or switch.
+# Since we are using all buttons, let's map rst_n to SW14 (T1) which is currently unused.
+set_property -dict { PACKAGE_PIN T1   IOSTANDARD LVCMOS33 } [get_ports rst_n]
 
 ## =============================================================================
 ## Switches
