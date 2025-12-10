@@ -60,13 +60,14 @@ module input_processor (
     wire [19:0] freq_stride;
     assign freq_stride = sw_cont_freq ? 20'd1 : 20'd1000;  // 1 Hz or 1 kHz
     
-    // Digit multipliers for frequency adjustment
+    // Digit multipliers for frequency adjustment (kHz mode only)
+    // digit_select 0 = 1 kHz, 1 = 10 kHz, 2 = 100 kHz
     reg [19:0] freq_digit_mult;
     always @(*) begin
         case (digit_select)
-            3'd0: freq_digit_mult = 20'd1000;   // 1 kHz
-            3'd1: freq_digit_mult = 20'd10000;  // 10 kHz
-            3'd2: freq_digit_mult = 20'd100000; // 100 kHz
+            3'd0: freq_digit_mult = 20'd1000;    // 1 kHz step
+            3'd1: freq_digit_mult = 20'd10000;   // 10 kHz step
+            3'd2: freq_digit_mult = 20'd100000;  // 100 kHz step
             default: freq_digit_mult = 20'd1000;
         endcase
     end
@@ -106,7 +107,7 @@ module input_processor (
                 config_mode <= MODE_FREQ;
             end
             
-            // Digit selection (left/right)
+            // Digit selection (left/right) - only 3 digits (0, 1, 2)
             if (btn_left) begin
                 digit_select <= (digit_select < 2) ? digit_select + 1'b1 : 3'd0;
             end
@@ -117,14 +118,15 @@ module input_processor (
             // Value adjustment (up/down)
             case (config_mode)
                 MODE_FREQ: begin
+                    // Frequency range: 1 kHz (1000 Hz) to 999 kHz (999000 Hz)
                     if (btn_up) begin
-                        if (freq_out + freq_digit_mult <= 20'd999999)
+                        if (freq_out + freq_digit_mult <= 20'd999000)
                             freq_out <= freq_out + freq_digit_mult;
                         else
-                            freq_out <= 20'd999999;
+                            freq_out <= 20'd999000;  // Maximum 999 kHz
                     end
                     if (btn_down) begin
-                        if (freq_out > freq_digit_mult)
+                        if (freq_out > freq_digit_mult && (freq_out - freq_digit_mult) >= 20'd1000)
                             freq_out <= freq_out - freq_digit_mult;
                         else
                             freq_out <= 20'd1000;  // Minimum 1 kHz
