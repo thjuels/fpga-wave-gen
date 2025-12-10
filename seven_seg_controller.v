@@ -74,25 +74,14 @@ module seven_seg_controller (
     // =========================================================================
     reg [3:0] current_digit;
     
-    // Select current digit value based on refresh counter and cursor position
+    // Select current digit value
     always @(*) begin
-        // If cursor is in upper digits (4 or 5), show upper window (digits 5,4,3,2)
-        // Otherwise show lower window (digits 3,2,1,0)
-        if (cursor >= 3'd4) begin
-            case (digit_select)
-                2'd0: current_digit = digit2;
-                2'd1: current_digit = digit3;
-                2'd2: current_digit = digit4;
-                2'd3: current_digit = digit5;
-            endcase
-        end else begin
-            case (digit_select)
-                2'd0: current_digit = digit0;
-                2'd1: current_digit = digit1;
-                2'd2: current_digit = digit2;
-                2'd3: current_digit = digit3;
-            endcase
-        end
+        case (digit_select)
+            2'd0: current_digit = digit0;
+            2'd1: current_digit = digit1;
+            2'd2: current_digit = digit2;
+            2'd3: current_digit = digit3;
+        endcase
     end
     
     // Anode control (active low)
@@ -138,22 +127,13 @@ module seven_seg_controller (
     // Decimal point control based on mode
     always @(*) begin
         case (mode)
-            4'd0: begin // Freq mode
-                if (cursor >= 3'd4) begin
-                    // Upper window: showing digits 5,4,3,2 (e.g. 123.4 kHz)
-                    // DP should be after digit 2 (which is at pos 0)
-                    dp = (digit_select == 2'd0) ? 1'b0 : 1'b1;
-                end else begin
-                    // Lower window: showing digits 3,2,1,0 (e.g. .456 Hz part)
-                    // DP should be before digit 3 (at pos 3) to indicate continuation?
-                    // Or maybe just no DP for lower part if we assume Hz?
-                    // Let's stick to the previous logic style: 
-                    // If we want 123.456 kHz.
-                    // Upper: 123.4
-                    // Lower: 3456 (no DP? or maybe at pos 3 to match?)
-                    // Let's put DP at pos 3 for lower window to indicate it's fractional part
-                    dp = (digit_select == 2'd3) ? 1'b0 : 1'b1;
-                end
+            4'd0: begin // Freq mode (kHz)
+                // Show cursor position with DP to indicate which digit is being edited
+                // cursor is 0-2 (1s, 10s, 100s of kHz)
+                if (digit_select == cursor[1:0] && cursor < 3'd4)
+                    dp = 1'b0; // Active low
+                else
+                    dp = 1'b1;
             end
             4'd1: dp = 1'b1;  // Phase mode: no DP
             4'd2: dp = 1'b1;  // Duty mode: no DP
