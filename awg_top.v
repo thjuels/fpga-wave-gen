@@ -250,4 +250,17 @@ module awg_top (
     assign led[7]     = locked;           // Clock locked
     assign led[15:8]  = wave_selected[11:4]; // Waveform amplitude indicator
 
+    ila_waveform_debug ila_inst (
+        .clk(clk),
+        .rst_n(rst_n),
+        .dac_out(dac_out),
+        .phase_acc(phase_acc),
+        .current_freq(current_freq),
+        .waveform_sel(sw_waveform),
+        .sweep_mode(sw_sweep_mode),
+        .freq_config(freq_val),
+        .phase_config(phase_val),
+        .duty_config(duty_cycle)
+    );
+
 endmodule
