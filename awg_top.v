@@ -20,10 +20,11 @@ module awg_top (
     input  wire [1:0]  sw_duty_sel,   // Duty cycle: 00=1/2, 01=1/3, 10=1/4, 11=1/7
     input  wire        sw_phase_mode, // 0: Frequency config, 1: Phase config
     input  wire        sw_cont_duty,  // 0: Fixed duty, 1: Continuous duty adjustment mode
-    input  wire        sw_cont_freq,  // 0: 1kHz stride, 1: 1Hz stride (expansion)
+    input  wire        sw_cont_freq,  // (unused, kept for compatibility)
     input  wire        sw_pulse_mode, // 0: Normal AWG, 1: MHz Pulse Generator
     input  wire        sw_sweep_range_mode, // 0: Normal, 1: Edit sweep range (0-50 kHz)
     input  wire        sw_sweep_speed_mode, // 0: Normal, 1: Edit sweep speed (0-4 kHz/ms)
+    input  wire        sw_hz_mode,    // 0: Edit kHz digits, 1: Edit Hz digits (bottom 3)
     
     // 7-segment display outputs
     output wire [6:0]  seg,           // Segment outputs (active low)
@@ -125,6 +126,8 @@ module awg_top (
         .sw_sweep_mode(sw_sweep_mode),
         .sw_sweep_range_mode(sw_sweep_range_mode),
         .sw_sweep_speed_mode(sw_sweep_speed_mode),
+        .sw_hz_mode(sw_hz_mode),
+        .sw_pulse_mode(sw_pulse_mode),
         .freq_out(freq_config),
         .phase_out(phase_config),
         .duty_out(duty_config),
