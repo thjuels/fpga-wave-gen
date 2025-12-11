@@ -9,9 +9,8 @@ create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5} [get_ports clk
 
 ## Reset (directly active low, directly usable)
 # set_property -dict { PACKAGE_PIN U18  IOSTANDARD LVCMOS33 } [get_ports rst_n]
-# U18 is btn_center, which is already used. Let's use SW15 (R2) for reset if needed, or just rely on power-on reset.
-# However, the design uses rst_n. Let's map it to a different button or switch.
-# Since we are using all buttons, let's map rst_n to SW14 (T1) which is currently unused.
+# U18 is btn_center, which is already used. Map rst_n to SW14.
+# Basys 3 switch pins: SW12=W2, SW13=U1, SW14=T1, SW15=R2
 set_property -dict { PACKAGE_PIN T1   IOSTANDARD LVCMOS33 } [get_ports rst_n]
 
 ## =============================================================================
@@ -38,10 +37,10 @@ set_property -dict { PACKAGE_PIN R2   IOSTANDARD LVCMOS33 } [get_ports sw_pulse_
 ## Expansion mode switches (SW9, SW10, SW13)
 ## SW9 = T3 (Sweep Range edit mode)
 ## SW10 = T2 (Sweep Speed edit mode)
-## SW13 = R3 (Hz stride mode - edit bottom 3 digits)
+## SW13 = U1 (Hz stride mode - edit bottom 3 digits)
 set_property -dict { PACKAGE_PIN T3   IOSTANDARD LVCMOS33 } [get_ports sw_sweep_range_mode]
 set_property -dict { PACKAGE_PIN T2   IOSTANDARD LVCMOS33 } [get_ports sw_sweep_speed_mode]
-set_property -dict { PACKAGE_PIN R3   IOSTANDARD LVCMOS33 } [get_ports sw_hz_mode]
+set_property -dict { PACKAGE_PIN U1   IOSTANDARD LVCMOS33 } [get_ports sw_hz_mode]
 
 ## =============================================================================
 ## Push Buttons (directly active high, directly usable)

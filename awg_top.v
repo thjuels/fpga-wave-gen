@@ -253,9 +253,10 @@ module awg_top (
     assign led[3:2]   = sw_sweep_mode;    // Current sweep mode
     assign led[4]     = sw_phase_mode;    // Phase config mode
     assign led[5]     = sw_cont_duty;     // Continuous duty mode
-    assign led[6]     = sw_cont_freq;     // Continuous frequency mode
+    assign led[6]     = sw_pulse_mode;    // MHz pulse mode indicator (was sw_cont_freq)
     assign led[7]     = locked;           // Clock locked
-    assign led[15:8]  = wave_selected[11:4]; // Waveform amplitude indicator
+    assign led[8]     = sw_hz_mode;       // Hz stride mode indicator
+    assign led[15:9]  = wave_selected[11:5]; // Waveform amplitude indicator (7 bits)
 
     ila_waveform_debug ila_inst (
         .clk(clk),
