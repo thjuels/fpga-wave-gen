@@ -21,6 +21,7 @@ module awg_top (
     input  wire        sw_phase_mode, // 0: Frequency config, 1: Phase config
     input  wire        sw_cont_duty,  // 0: Fixed duty, 1: Continuous duty adjustment
     input  wire        sw_cont_freq,  // 0: 1kHz stride, 1: 1Hz stride (expansion)
+    input  wire        sw_pulse_mode, // 0: Normal AWG, 1: MHz Pulse Generator
     
     // 7-segment display outputs
     output wire [6:0]  seg,           // Segment outputs (active low)
@@ -57,8 +58,9 @@ module awg_top (
     wire [31:0] phase_acc;            // Phase accumulator value
     
     // Display data
-    wire [15:0] display_value;
+    wire [19:0] display_value;
     wire [3:0]  display_mode;
+    wire [2:0]  display_cursor;
     
     // =========================================================================
     // Clock Generation - Using 100MHz directly
@@ -125,7 +127,8 @@ module awg_top (
         .sweep_range_out(sweep_range),
         .sweep_speed_out(sweep_speed),
         .display_value(display_value),
-        .display_mode(display_mode)
+        .display_mode(display_mode),
+        .cursor_out(display_cursor)
     );
     
     // =========================================================================
@@ -187,16 +190,36 @@ module awg_top (
     );
     
     // =========================================================================
+    // MHz Pulse Generator (Expansion Requirement)
+    // =========================================================================
+    wire pulse_mhz_out;
+    
+    pulse_generator_mhz #(
+        .N_MHZ(3) // Set to average of student ID last digits (e.g. 3 MHz)
+    ) u_pulse_mhz (
+        .clk(clk_100mhz),
+        .rst_n(rst_n),
+        .duty_mode(sw_duty_sel),
+        .enable(sw_pulse_mode),
+        .pulse_out(pulse_mhz_out)
+    );
+    
+    // =========================================================================
     // Waveform Selection Multiplexer
     // =========================================================================
     reg [11:0] wave_mux;
     always @(*) begin
-        case (sw_waveform)
-            2'b00: wave_mux = wave_sine;
-            2'b01: wave_mux = wave_saw;
-            2'b10: wave_mux = wave_tri;
-            2'b11: wave_mux = wave_square;
-        endcase
+        if (sw_pulse_mode) begin
+            // Output max or min value based on pulse
+            wave_mux = pulse_mhz_out ? 12'hFFF : 12'h000;
+        end else begin
+            case (sw_waveform)
+                2'b00: wave_mux = wave_sine;
+                2'b01: wave_mux = wave_saw;
+                2'b10: wave_mux = wave_tri;
+                2'b11: wave_mux = wave_square;
+            endcase
+        end
     end
     
     assign wave_selected = wave_mux;
@@ -210,6 +233,7 @@ module awg_top (
         .rst_n(rst_n),
         .value(display_value),
         .mode(display_mode),
+        .cursor(display_cursor),
         .seg(seg),
         .an(an),
         .dp(dp)
@@ -225,5 +249,18 @@ module awg_top (
     assign led[6]     = sw_cont_freq;     // Continuous frequency mode
     assign led[7]     = locked;           // Clock locked
     assign led[15:8]  = wave_selected[11:4]; // Waveform amplitude indicator
+
+    ila_waveform_debug ila_inst (
+        .clk(clk),
+        .rst_n(rst_n),
+        .dac_out(dac_out),
+        .phase_acc(phase_acc),
+        .current_freq(current_freq),
+        .waveform_sel(sw_waveform),
+        .sweep_mode(sw_sweep_mode),
+        .freq_config(freq_val),
+        .phase_config(phase_val),
+        .duty_config(duty_cycle)
+    );
 
 endmodule

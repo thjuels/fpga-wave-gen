@@ -28,9 +28,12 @@ module input_processor (
     output reg  [12:0] sweep_speed_out,  // Sweep speed in Hz/ms (0-4000)
     
     // Display outputs
-    output reg  [15:0] display_value,
-    output reg  [3:0]  display_mode
+    output reg  [19:0] display_value,
+    output reg  [3:0]  display_mode,
+    output wire [2:0]  cursor_out
 );
+
+    assign cursor_out = digit_select;
 
     // =========================================================================
     // Configuration State Machine
@@ -57,16 +60,14 @@ module input_processor (
     wire [19:0] freq_stride;
     assign freq_stride = sw_cont_freq ? 20'd1 : 20'd1000;  // 1 Hz or 1 kHz
     
-    // Digit multipliers for frequency adjustment
+    // Digit multipliers for frequency adjustment (kHz mode only)
+    // digit_select 0 = 1 kHz, 1 = 10 kHz, 2 = 100 kHz
     reg [19:0] freq_digit_mult;
     always @(*) begin
         case (digit_select)
-            3'd0: freq_digit_mult = sw_cont_freq ? 20'd1      : 20'd1000;
-            3'd1: freq_digit_mult = sw_cont_freq ? 20'd10     : 20'd10000;
-            3'd2: freq_digit_mult = sw_cont_freq ? 20'd100    : 20'd100000;
-            3'd3: freq_digit_mult = sw_cont_freq ? 20'd1000   : 20'd1000;
-            3'd4: freq_digit_mult = sw_cont_freq ? 20'd10000  : 20'd10000;
-            3'd5: freq_digit_mult = sw_cont_freq ? 20'd100000 : 20'd100000;
+            3'd0: freq_digit_mult = 20'd1000;    // 1 kHz step
+            3'd1: freq_digit_mult = 20'd10000;   // 10 kHz step
+            3'd2: freq_digit_mult = 20'd100000;  // 100 kHz step
             default: freq_digit_mult = 20'd1000;
         endcase
     end
@@ -106,25 +107,26 @@ module input_processor (
                 config_mode <= MODE_FREQ;
             end
             
-            // Digit selection (left/right)
+            // Digit selection (left/right) - only 3 digits (0, 1, 2)
             if (btn_left) begin
-                digit_select <= (digit_select < 5) ? digit_select + 1'b1 : 3'd0;
+                digit_select <= (digit_select < 2) ? digit_select + 1'b1 : 3'd0;
             end
             if (btn_right) begin
-                digit_select <= (digit_select > 0) ? digit_select - 1'b1 : 3'd5;
+                digit_select <= (digit_select > 0) ? digit_select - 1'b1 : 3'd2;
             end
             
             // Value adjustment (up/down)
             case (config_mode)
                 MODE_FREQ: begin
+                    // Frequency range: 1 kHz (1000 Hz) to 999 kHz (999000 Hz)
                     if (btn_up) begin
-                        if (freq_out + freq_digit_mult <= 20'd999999)
+                        if (freq_out + freq_digit_mult <= 20'd999000)
                             freq_out <= freq_out + freq_digit_mult;
                         else
-                            freq_out <= 20'd999999;
+                            freq_out <= 20'd999000;  // Maximum 999 kHz
                     end
                     if (btn_down) begin
-                        if (freq_out > freq_digit_mult)
+                        if (freq_out > freq_digit_mult && (freq_out - freq_digit_mult) >= 20'd1000)
                             freq_out <= freq_out - freq_digit_mult;
                         else
                             freq_out <= 20'd1000;  // Minimum 1 kHz
@@ -188,12 +190,12 @@ module input_processor (
     always @(*) begin
         display_mode = config_mode;
         case (config_mode)
-            MODE_FREQ:        display_value = freq_out[15:0];        // Show lower 16 bits
-            MODE_PHASE:       display_value = {6'b0, phase_out};
-            MODE_DUTY:        display_value = {9'b0, duty_out};
-            MODE_SWEEP_RANGE: display_value = sweep_range_out[15:0];
-            MODE_SWEEP_SPEED: display_value = {3'b0, sweep_speed_out};
-            default:          display_value = freq_out[15:0];
+            MODE_FREQ:        display_value = freq_out / 20'd1000;   // Show in kHz (1-999)
+            MODE_PHASE:       display_value = {10'b0, phase_out};
+            MODE_DUTY:        display_value = {13'b0, duty_out};
+            MODE_SWEEP_RANGE: display_value = {3'b0, sweep_range_out};
+            MODE_SWEEP_SPEED: display_value = {7'b0, sweep_speed_out};
+            default:          display_value = freq_out / 20'd1000;
         endcase
     end
 
