@@ -35,6 +35,12 @@ set_property -dict { PACKAGE_PIN W13  IOSTANDARD LVCMOS33 } [get_ports sw_cont_d
 set_property -dict { PACKAGE_PIN V2   IOSTANDARD LVCMOS33 } [get_ports sw_cont_freq]
 set_property -dict { PACKAGE_PIN R2   IOSTANDARD LVCMOS33 } [get_ports sw_pulse_mode]
 
+## Expansion mode switches (SW9, SW10)
+## SW9 = T3 (Sweep Range edit mode)
+## SW10 = T2 (Sweep Speed edit mode)
+set_property -dict { PACKAGE_PIN T3   IOSTANDARD LVCMOS33 } [get_ports sw_sweep_range_mode]
+set_property -dict { PACKAGE_PIN T2   IOSTANDARD LVCMOS33 } [get_ports sw_sweep_speed_mode]
+
 ## =============================================================================
 ## Push Buttons (directly active high, directly usable)
 ## =============================================================================
