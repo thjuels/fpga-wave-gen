@@ -34,8 +34,9 @@ module sine_generator (
     // =========================================================================
     // Convert phase_offset (0-999) to 12-bit phase offset
     // phase_offset_12 = (phase_offset * 4096) / 1000 ≈ phase_offset * 4.096
+    // Use bit shift approximation: (phase_offset << 2) + ((phase_offset * 100) >> 10)
     wire [11:0] phase_offset_12;
-    assign phase_offset_12 = (phase_offset * 12'd4096) / 12'd1000;
+    assign phase_offset_12 = (phase_offset << 2) + ((phase_offset * 7'd100) >> 10);
     
     // Apply phase offset to input phase
     wire [11:0] phase_shifted;
