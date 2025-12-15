@@ -31,11 +31,14 @@ module square_generator (
     // Continuous duty cycle threshold
     // threshold = (duty_cont * 4096) / 100
     // Using approximation: duty_cont * 41 (close to 4096/100 = 40.96)
-    wire [18:0] cont_product;
+    // For duty_cont = 99: 99 * 41 = 4059 ≈ 4096 * 0.99
+    // For duty_cont = 50: 50 * 41 = 2050 ≈ 4096 * 0.50
+    // For duty_cont = 1:  1 * 41  = 41   ≈ 4096 * 0.01
+    wire [12:0] cont_product;
     wire [11:0] threshold_cont;
 
-    assign cont_product   = {12'b0, duty_cont} * 19'd41;  // ≈ duty_cont * 40.96
-    assign threshold_cont = cont_product[17:6];           // divide by 64 → 0..~4096
+    assign cont_product   = {6'b0, duty_cont} * 13'd41;  // duty_cont * 41
+    assign threshold_cont = cont_product[11:0];          // Use lower 12 bits directly (no division)
 
     always @(*) begin
         if (cont_enable) begin
