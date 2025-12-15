@@ -90,6 +90,18 @@ module input_processor (
         endcase
     end
     
+    // Digit multipliers for phase adjustment (0-999)
+    // digit_select 0 = 1s, 1 = 10s, 2 = 100s
+    reg [9:0] phase_digit_mult;
+    always @(*) begin
+        case (digit_select)
+            3'd0: phase_digit_mult = 10'd1;      // 1 step
+            3'd1: phase_digit_mult = 10'd10;     // 10 step
+            3'd2: phase_digit_mult = 10'd100;    // 100 step
+            default: phase_digit_mult = 10'd1;
+        endcase
+    end
+    
     // =========================================================================
     // Main Configuration Logic
     // =========================================================================
@@ -164,17 +176,18 @@ module input_processor (
                 end
                 
                 MODE_PHASE: begin
+                    // Phase range: 0-999 (representing 0 to 2pi)
                     if (btn_up) begin
-                        if (phase_out < 10'd999)
-                            phase_out <= phase_out + 1'b1;
+                        if (phase_out + phase_digit_mult <= 10'd999)
+                            phase_out <= phase_out + phase_digit_mult;
                         else
-                            phase_out <= 10'd0;
+                            phase_out <= 10'd999;  // Maximum
                     end
                     if (btn_down) begin
-                        if (phase_out > 10'd0)
-                            phase_out <= phase_out - 1'b1;
+                        if (phase_out >= phase_digit_mult)
+                            phase_out <= phase_out - phase_digit_mult;
                         else
-                            phase_out <= 10'd999;
+                            phase_out <= 10'd0;  // Minimum
                     end
                 end
                 
