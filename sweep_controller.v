@@ -71,9 +71,11 @@ module sweep_controller (
     wire [12:0] linear_increment;
     wire [12:0] up_increment;    // 1 kHz/μs = 1000 Hz/μs
     wire [12:0] down_increment;  // 1 kHz/ms = 1 Hz/μs
+    wire signed [17:0] fixed_sweep_range;  // Fixed ±20kHz for 2'b01
     assign linear_increment = sweep_speed / 13'd1000;  // Proper division by 1000
     assign up_increment = 13'd1000;   // 1 kHz/μs
     assign down_increment = 13'd1;    // 1 Hz/μs = 1 kHz/ms
+    assign fixed_sweep_range = 18'd20000;  // ±20kHz
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -83,16 +85,16 @@ module sweep_controller (
             if (us_tick) begin // Update every microsecond for high speed sweep
                 if (!linear_direction) begin
                     // Increasing frequency at 1 kHz/μs
-                    if (linear_offset + $signed({5'b0, up_increment}) >= sweep_range_signed) begin
-                        linear_offset <= sweep_range_signed;
+                    if (linear_offset + $signed({5'b0, up_increment}) >= fixed_sweep_range) begin
+                        linear_offset <= fixed_sweep_range;
                         linear_direction <= 1'b1;
                     end else begin
                         linear_offset <= linear_offset + $signed({5'b0, up_increment});
                     end
                 end else begin
                     // Decreasing frequency at 1 kHz/ms
-                    if (linear_offset - $signed({5'b0, down_increment}) <= -sweep_range_signed) begin
-                        linear_offset <= -sweep_range_signed;
+                    if (linear_offset - $signed({5'b0, down_increment}) <= -fixed_sweep_range) begin
+                        linear_offset <= -fixed_sweep_range;
                         linear_direction <= 1'b0;
                     end else begin
                         linear_offset <= linear_offset - $signed({5'b0, down_increment});
