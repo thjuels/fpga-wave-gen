@@ -130,8 +130,8 @@ module sweep_controller (
             end
             // Adjust phase increment based on sweep_speed
             // Higher speed = faster sine wave = larger phase increment
-            // sweep_speed is in Hz/ms, convert to Hz/us by dividing by 1000
-            sine_phase_inc <= (sweep_speed / 13'd1000) >> 2;
+            // sweep_speed is in Hz/ms, but for sine sweep we use direct scaling
+            sine_phase_inc <= {3'b0, sweep_speed[12:0]} >> 2;
         end else begin
             sine_phase <= 12'd0;
         end
