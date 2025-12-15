@@ -11,7 +11,8 @@ module sweep_controller (
     input  wire [19:0] base_freq,        // Base frequency in Hz
     input  wire [1:0]  sweep_mode,       // 00: No sweep, 01: Linear, 10: Sinusoidal
     input  wire [16:0] sweep_range,      // Sweep range in Hz (max deviation)
-    input  wire [12:0] sweep_speed,      // Sweep speed in Hz/us (previously Hz/ms)
+    input  wire [12:0] sweep_speed,      // Sweep speed in Hz/ms
+    input  wire        pulse_mode,       // 1: MHz pulse mode (output fixed frequency)
     
     // Output
     output reg  [19:0] current_freq      // Current instantaneous frequency
@@ -66,9 +67,9 @@ module sweep_controller (
     assign sweep_range_signed = {1'b0, sweep_range};
     
     // Calculate sweep increment per step
-    // sweep_speed is in Hz/us
+    // sweep_speed is in Hz/ms, convert to Hz/us by dividing by 1000
     wire [12:0] linear_increment;
-    assign linear_increment = sweep_speed;
+    assign linear_increment = sweep_speed >> 10;  // Divide by 1024 (close to 1000)
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -129,7 +130,8 @@ module sweep_controller (
             end
             // Adjust phase increment based on sweep_speed
             // Higher speed = faster sine wave = larger phase increment
-            sine_phase_inc <= {3'b0, sweep_speed[12:0]} >> 2;
+            // sweep_speed is in Hz/ms, convert to Hz/us by dividing by 1000
+            sine_phase_inc <= ({3'b0, sweep_speed[12:0]} >> 10) >> 2;
         end else begin
             sine_phase <= 12'd0;
         end
@@ -171,11 +173,14 @@ module sweep_controller (
     assign freq_with_offset = $signed({1'b0, base_freq}) + active_offset;
     
     // Clamp output frequency to valid range (1kHz to 999kHz)
+    // In pulse mode, output fixed 3 MHz frequency
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             current_freq <= 20'd100000;  // Default 100kHz
         end else begin
-            if (freq_with_offset < 21'sd1000) begin
+            if (pulse_mode) begin
+                current_freq <= 20'd3000000;  // Fixed 3 MHz in pulse mode
+            end else if (freq_with_offset < 21'sd1000) begin
                 current_freq <= 20'd1000;
             end else if (freq_with_offset > 21'sd999000) begin
                 current_freq <= 20'd999000;

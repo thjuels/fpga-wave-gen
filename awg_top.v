@@ -148,6 +148,7 @@ module awg_top (
         .sweep_mode(sw_sweep_mode),
         .sweep_range(sweep_range),
         .sweep_speed(sweep_speed),
+        .pulse_mode(sw_pulse_mode),
         .current_freq(current_freq)
     );
     
