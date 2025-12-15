@@ -51,7 +51,13 @@ module phase_accumulator (
     // Convert phase_offset (0-999) to 32-bit phase value
     // phase_offset_32 = (phase_offset * 2^32) / 1000 ≈ phase_offset * 4294967
     wire [31:0] phase_offset_32;
-    assign phase_offset_32 = phase_offset * 32'd4294967;
+    assign phase_offset_32 = ({phase_offset, 22'b0}) +           // * 4194304
+                             ({6'b0, phase_offset, 16'b0}) +     // * 65536
+                             ({7'b0, phase_offset, 15'b0}) +     // * 32768
+                             ({10'b0, phase_offset, 12'b0}) +    // * 4096
+                             ({13'b0, phase_offset, 9'b0}) +     // * 512
+                             ({16'b0, phase_offset, 6'b0}) +     // * 64
+                             ({19'b0, phase_offset, 0'b0});      // * 1
     
     // =========================================================================
     // Phase Accumulator
