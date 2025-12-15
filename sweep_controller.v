@@ -79,7 +79,7 @@ module sweep_controller (
         if (!rst_n) begin
             linear_offset <= 18'sd0;
             linear_direction <= 1'b0;
-        end else if (sweep_mode == 2'b01) begin  // Linear sweep mode
+        end else if (sweep_mode == 2'b01) begin  // Linear sweep mode - fixed asymmetric speeds
             if (us_tick) begin // Update every microsecond for high speed sweep
                 if (!linear_direction) begin
                     // Increasing frequency at 1 kHz/μs
@@ -96,6 +96,26 @@ module sweep_controller (
                         linear_direction <= 1'b0;
                     end else begin
                         linear_offset <= linear_offset - $signed({5'b0, down_increment});
+                    end
+                end
+            end
+        end else if (sweep_mode == 2'b11) begin  // Linear sweep mode - adjustable symmetric speeds
+            if (us_tick) begin // Update every microsecond for high speed sweep
+                if (!linear_direction) begin
+                    // Increasing frequency at adjustable speed
+                    if (linear_offset + $signed({5'b0, linear_increment}) >= sweep_range_signed) begin
+                        linear_offset <= sweep_range_signed;
+                        linear_direction <= 1'b1;
+                    end else begin
+                        linear_offset <= linear_offset + $signed({5'b0, linear_increment});
+                    end
+                end else begin
+                    // Decreasing frequency at same adjustable speed
+                    if (linear_offset - $signed({5'b0, linear_increment}) <= -sweep_range_signed) begin
+                        linear_offset <= -sweep_range_signed;
+                        linear_direction <= 1'b0;
+                    end else begin
+                        linear_offset <= linear_offset - $signed({5'b0, linear_increment});
                     end
                 end
             end
