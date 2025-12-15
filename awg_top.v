@@ -171,6 +171,7 @@ module awg_top (
     sine_generator u_sine (
         .clk(clk_100mhz),
         .phase(phase_acc[31:20]),
+        .phase_offset(phase_config),
         .sine_out(wave_sine)
     );
     

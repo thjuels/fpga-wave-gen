@@ -6,6 +6,7 @@
 module sine_generator (
     input  wire        clk,
     input  wire [11:0] phase,      // 12-bit phase input (upper bits of accumulator)
+    input  wire [9:0]  phase_offset, // Phase offset (0-999)
     output reg  [11:0] sine_out    // 12-bit sine output (unsigned, 0-4095)
 );
 
@@ -29,6 +30,18 @@ module sine_generator (
     end
     
     // =========================================================================
+    // Phase Offset Conversion
+    // =========================================================================
+    // Convert phase_offset (0-999) to 12-bit phase offset
+    // phase_offset_12 = (phase_offset * 4096) / 1000 ≈ phase_offset * 4.096
+    wire [11:0] phase_offset_12;
+    assign phase_offset_12 = (phase_offset * 12'd4096) / 12'd1000;
+    
+    // Apply phase offset to input phase
+    wire [11:0] phase_shifted;
+    assign phase_shifted = phase + phase_offset_12;
+    
+    // =========================================================================
     // Quadrant-Based Sine Reconstruction
     // =========================================================================
     wire [1:0]  quadrant;
@@ -37,8 +50,8 @@ module sine_generator (
     reg  [11:0] lut_value;
     reg  [1:0]  quadrant_d1, quadrant_d2;
     
-    assign quadrant = phase[11:10];
-    assign lut_index = phase[9:0];
+    assign quadrant = phase_shifted[11:10];
+    assign lut_index = phase_shifted[9:0];
     
     // Adjust index based on quadrant (mirror for odd quadrants)
     assign adjusted_index = quadrant[0] ? (10'd1023 - lut_index) : lut_index;

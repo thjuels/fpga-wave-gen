@@ -77,7 +77,7 @@ module phase_accumulator (
         if (!rst_n) begin
             phase_acc <= 32'd0;
         end else begin
-            phase_acc <= phase_raw + phase_offset_32;
+            phase_acc <= phase_raw;  // No offset added here - offset applied in sine generator
         end
     end
 
