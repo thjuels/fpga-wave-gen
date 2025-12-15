@@ -69,7 +69,11 @@ module sweep_controller (
     // Calculate sweep increment per step
     // sweep_speed is in Hz/ms, convert to Hz/us by dividing by 1000
     wire [12:0] linear_increment;
+    wire [12:0] up_increment;    // 1 kHz/μs = 1000 Hz/μs
+    wire [12:0] down_increment;  // 1 kHz/ms = 1 Hz/μs
     assign linear_increment = sweep_speed / 13'd1000;  // Proper division by 1000
+    assign up_increment = 13'd1000;   // 1 kHz/μs
+    assign down_increment = 13'd1;    // 1 Hz/μs = 1 kHz/ms
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -78,20 +82,20 @@ module sweep_controller (
         end else if (sweep_mode == 2'b01) begin  // Linear sweep mode
             if (us_tick) begin // Update every microsecond for high speed sweep
                 if (!linear_direction) begin
-                    // Increasing frequency
-                    if (linear_offset + $signed({5'b0, linear_increment}) >= sweep_range_signed) begin
+                    // Increasing frequency at 1 kHz/μs
+                    if (linear_offset + $signed({5'b0, up_increment}) >= sweep_range_signed) begin
                         linear_offset <= sweep_range_signed;
                         linear_direction <= 1'b1;
                     end else begin
-                        linear_offset <= linear_offset + $signed({5'b0, linear_increment});
+                        linear_offset <= linear_offset + $signed({5'b0, up_increment});
                     end
                 end else begin
-                    // Decreasing frequency
-                    if (linear_offset - $signed({5'b0, linear_increment}) <= -sweep_range_signed) begin
+                    // Decreasing frequency at 1 kHz/ms
+                    if (linear_offset - $signed({5'b0, down_increment}) <= -sweep_range_signed) begin
                         linear_offset <= -sweep_range_signed;
                         linear_direction <= 1'b0;
                     end else begin
-                        linear_offset <= linear_offset - $signed({5'b0, linear_increment});
+                        linear_offset <= linear_offset - $signed({5'b0, down_increment});
                     end
                 end
             end
@@ -143,15 +147,15 @@ module sweep_controller (
     assign sine_centered = $signed({1'b0, sine_value}) - 13'sd2048;
     
     // Scale sine to sweep range
-    // sine_offset = (sine_centered * sweep_range) / 2048
-    wire signed [29:0] sine_scaled;
-    assign sine_scaled = sine_centered * $signed({1'b0, sweep_range});
+    // For sweep_range = 20000, sine_offset ≈ sine_centered * 10
+    wire signed [22:0] sine_scaled;
+    assign sine_scaled = sine_centered * $signed(10);
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             sine_offset <= 18'sd0;
         end else begin
-            sine_offset <= sine_scaled[28:11];  // Divide by 2048
+            sine_offset <= sine_scaled[17:0];  // Take lower 18 bits
         end
     end
     
@@ -236,7 +240,7 @@ module sine_lut_sweep (
             2'b00: sine_out <= table_value;                      // 0 to pi/2
             2'b01: sine_out <= table_value;                      // pi/2 to pi
             2'b10: sine_out <= 12'd4095 - table_value;           // pi to 3pi/2
-            2'b11: sine_out <= 12'd4095 - table_value;           // 3pi/2 to 2pi
+            2'b11: sine_out <= table_value - 12'd2048;           // 3pi/2 to 2pi
         endcase
     end
 

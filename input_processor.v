@@ -42,13 +42,14 @@ module input_processor (
     // =========================================================================
     // Configuration State Machine
     // =========================================================================
-    localparam MODE_FREQ        = 4'd0;
-    localparam MODE_PHASE       = 4'd1;
-    localparam MODE_DUTY        = 4'd2;
-    localparam MODE_SWEEP_RANGE = 4'd3;
-    localparam MODE_SWEEP_SPEED = 4'd4;
-    localparam MODE_FREQ_HZ     = 4'd5;  // Edit Hz portion (bottom 3 digits)
-    localparam MODE_MHZ_PULSE   = 4'd6;  // MHz pulse display mode
+    localparam MODE_FREQ            = 4'd0;
+    localparam MODE_PHASE           = 4'd1;
+    localparam MODE_DUTY            = 4'd2;
+    localparam MODE_SWEEP_RANGE     = 4'd3;
+    localparam MODE_SWEEP_SPEED     = 4'd4;
+    localparam MODE_FREQ_HZ         = 4'd5;  // Edit Hz portion (bottom 3 digits)
+    localparam MODE_MHZ_PULSE       = 4'd6;  // MHz pulse display mode
+    localparam MODE_ADJUSTABLE_FREQ = 4'd7;  // Adjustable frequency mode
     
     reg [3:0] config_mode;
     reg [2:0] digit_select;  // Which digit is being edited (0-5)
@@ -116,13 +117,15 @@ module input_processor (
             digit_select    <= 3'd0;
         end else begin
             // Mode selection based on switches (direct switch control)
-            // Priority: pulse_mode > sweep_range > sweep_speed > duty > hz_mode > phase > freq
+            // Priority: pulse_mode > sweep_range > sweep_speed > adjustable_freq > duty > hz_mode > phase > freq
             if (sw_pulse_mode) begin
                 config_mode <= MODE_MHZ_PULSE;
             end else if (sw_sweep_range_mode) begin
                 config_mode <= MODE_SWEEP_RANGE;
             end else if (sw_sweep_speed_mode) begin
                 config_mode <= MODE_SWEEP_SPEED;
+            end else if (sw_sweep_mode == 2'b11) begin
+                config_mode <= MODE_ADJUSTABLE_FREQ;
             end else if (sw_cont_duty) begin
                 config_mode <= MODE_DUTY;
             end else if (sw_hz_mode) begin
@@ -191,6 +194,22 @@ module input_processor (
                     end
                 end
                 
+                MODE_ADJUSTABLE_FREQ: begin
+                    // Adjustable frequency mode: continuous adjustment with 1kHz steps
+                    if (btn_up) begin
+                        if (freq_out + 20'd1000 <= 20'd999999)
+                            freq_out <= freq_out + 20'd1000;  // +1 kHz
+                        else
+                            freq_out <= 20'd999999;  // Maximum
+                    end
+                    if (btn_down) begin
+                        if (freq_out >= 20'd1000 + 20'd1000)
+                            freq_out <= freq_out - 20'd1000;  // -1 kHz
+                        else
+                            freq_out <= 20'd1000;  // Minimum 1 kHz
+                    end
+                end
+                
                 MODE_DUTY: begin
                     if (btn_up) begin
                         if (duty_out < 7'd99)
@@ -239,14 +258,15 @@ module input_processor (
     always @(*) begin
         display_mode = config_mode;
         case (config_mode)
-            MODE_FREQ:        display_value = freq_out / 20'd1000;           // Show in kHz (1-999)
-            MODE_FREQ_HZ:     display_value = freq_out % 20'd1000;           // Show Hz portion (0-999)
-            MODE_PHASE:       display_value = {10'b0, phase_out};            // Show 0-999
-            MODE_DUTY:        display_value = {13'b0, duty_out};             // Show 1-99 (%)
-            MODE_SWEEP_RANGE: display_value = sweep_range_out / 17'd1000;    // Show in kHz (0-50)
-            MODE_SWEEP_SPEED: display_value = sweep_speed_out / 13'd1000;    // Show in kHz/ms (0-4)
-            MODE_MHZ_PULSE:   display_value = 20'd3;                         // Show MHz frequency (3 MHz)
-            default:          display_value = freq_out / 20'd1000;
+            MODE_FREQ:            display_value = freq_out / 20'd1000;           // Show in kHz (1-999)
+            MODE_FREQ_HZ:         display_value = freq_out % 20'd1000;           // Show Hz portion (0-999)
+            MODE_PHASE:           display_value = {10'b0, phase_out};            // Show 0-999
+            MODE_DUTY:            display_value = {13'b0, duty_out};             // Show 1-99 (%)
+            MODE_SWEEP_RANGE:     display_value = sweep_range_out / 17'd1000;    // Show in kHz (0-50)
+            MODE_SWEEP_SPEED:     display_value = sweep_speed_out / 13'd1000;    // Show in kHz/ms (0-4)
+            MODE_MHZ_PULSE:       display_value = 20'd3;                         // Show MHz frequency (3 MHz)
+            MODE_ADJUSTABLE_FREQ: display_value = freq_out / 20'd1000;           // Show in kHz (1-999)
+            default:              display_value = freq_out / 20'd1000;
         endcase
     end
 
