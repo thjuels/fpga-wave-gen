@@ -267,9 +267,9 @@ module awg_top (
         .current_freq(current_freq),
         .waveform_sel(sw_waveform),
         .sweep_mode(sw_sweep_mode),
-        .freq_config(freq_val),
-        .phase_config(phase_val),
-        .duty_config(duty_cycle)
+        .freq_config(freq_config),
+        .phase_config(phase_config),
+        .duty_config(duty_config)
     );
 
 endmodule
