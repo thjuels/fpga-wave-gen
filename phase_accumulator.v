@@ -49,23 +49,15 @@ module phase_accumulator (
     // Phase Offset Calculation
     // =========================================================================
     // Convert phase_offset (0-999) to 32-bit phase value
-    // phase_offset_32 = (phase_offset * 2^32) / 1000
-    // ≈ phase_offset * 4294967
-    // ≈ phase_offset * 4194304 + phase_offset * 65536 + phase_offset * 32768 + phase_offset * 8192
-    // Simplified: phase_offset * 4295000 ≈ phase_offset << 22 + phase_offset << 16 + ...
-    
+    // phase_offset_32 = (phase_offset * 2^32) / 1000 ≈ phase_offset * 4294967
     wire [31:0] phase_offset_32;
-    wire [31:0] offset_mult;
-    
-    // Approximate multiplication by 4294967
-    assign offset_mult = ({phase_offset, 22'b0}) +           // * 4194304
-                         ({6'b0, phase_offset, 16'b0}) +     // * 65536
-                         ({7'b0, phase_offset, 15'b0}) +     // * 32768
-                         ({10'b0, phase_offset, 12'b0}) +    // * 4096
-                         ({13'b0, phase_offset, 9'b0}) +     // * 512
-                         ({16'b0, phase_offset, 6'b0});      // * 64
-    
-    assign phase_offset_32 = offset_mult;
+    assign phase_offset_32 = ({phase_offset, 22'b0}) +           // * 4194304
+                             ({6'b0, phase_offset, 16'b0}) +     // * 65536
+                             ({7'b0, phase_offset, 15'b0}) +     // * 32768
+                             ({10'b0, phase_offset, 12'b0}) +    // * 4096
+                             ({13'b0, phase_offset, 9'b0}) +     // * 512
+                             ({16'b0, phase_offset, 6'b0}) +     // * 64
+                             ({19'b0, phase_offset, 0'b0});      // * 1
     
     // =========================================================================
     // Phase Accumulator
@@ -85,7 +77,7 @@ module phase_accumulator (
         if (!rst_n) begin
             phase_acc <= 32'd0;
         end else begin
-            phase_acc <= phase_raw + phase_offset_32;
+            phase_acc <= phase_raw;  // No offset added here - offset applied in sine generator
         end
     end
 

@@ -186,11 +186,13 @@ endmodule
 module sine_generator_tb;
     reg         clk;
     reg  [11:0] phase;
+    reg  [9:0]  phase_offset;
     wire [11:0] sine_out;
     
     sine_generator uut (
         .clk(clk),
         .phase(phase),
+        .phase_offset(phase_offset),
         .sine_out(sine_out)
     );
     
@@ -199,6 +201,7 @@ module sine_generator_tb;
     
     initial begin
         phase = 0;
+        phase_offset = 0;
         #100;
         
         // Sweep through all phases

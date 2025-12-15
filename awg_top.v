@@ -148,6 +148,7 @@ module awg_top (
         .sweep_mode(sw_sweep_mode),
         .sweep_range(sweep_range),
         .sweep_speed(sweep_speed),
+        .pulse_mode(sw_pulse_mode),
         .current_freq(current_freq)
     );
     
@@ -170,6 +171,7 @@ module awg_top (
     sine_generator u_sine (
         .clk(clk_100mhz),
         .phase(phase_acc[31:20]),
+        .phase_offset(phase_config),
         .sine_out(wave_sine)
     );
     
@@ -266,9 +268,9 @@ module awg_top (
         .current_freq(current_freq),
         .waveform_sel(sw_waveform),
         .sweep_mode(sw_sweep_mode),
-        .freq_config(freq_val),
-        .phase_config(phase_val),
-        .duty_config(duty_cycle)
+        .freq_config(freq_config),
+        .phase_config(phase_config),
+        .duty_config(duty_config)
     );
 
 endmodule
