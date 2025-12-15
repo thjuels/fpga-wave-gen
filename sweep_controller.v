@@ -69,7 +69,7 @@ module sweep_controller (
     // Calculate sweep increment per step
     // sweep_speed is in Hz/ms, convert to Hz/us by dividing by 1000
     wire [12:0] linear_increment;
-    assign linear_increment = sweep_speed >> 10;  // Divide by 1024 (close to 1000)
+    assign linear_increment = sweep_speed / 13'd1000;  // Proper division by 1000
     
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -131,7 +131,7 @@ module sweep_controller (
             // Adjust phase increment based on sweep_speed
             // Higher speed = faster sine wave = larger phase increment
             // sweep_speed is in Hz/ms, convert to Hz/us by dividing by 1000
-            sine_phase_inc <= ({3'b0, sweep_speed[12:0]} >> 10) >> 2;
+            sine_phase_inc <= (sweep_speed / 13'd1000) >> 2;
         end else begin
             sine_phase <= 12'd0;
         end
